@@ -307,21 +307,22 @@ export default function Home() {
             )}
 
             {/* Sponsor Banner / QR Section */}
-            <div className="mt-10 pt-8 border-t border-white/10">
-              <p className="text-[11px] text-zinc-400 uppercase tracking-widest font-bold mb-5 text-center">Follow on Instagram</p>
-              <div className="bg-white/5 border border-white/10 rounded-[2rem] p-8 flex flex-col items-center justify-center gap-6 hover:bg-white/10 transition-all duration-500 backdrop-blur-md group cursor-pointer shadow-2xl">
-                <div className="w-full relative aspect-square max-w-[260px] bg-white rounded-2xl flex items-center justify-center overflow-hidden shadow-[0_0_40px_rgba(255,255,255,0.1)] group-hover:shadow-[0_0_50px_rgba(255,255,255,0.2)] transition-all duration-500">
+            <div className="mt-12 pt-8 border-t border-white/10">
+              <p className="text-[11px] text-zinc-400 uppercase tracking-widest font-bold mb-6 text-center">Follow on Instagram</p>
+              <div className="bg-white/5 border border-white/10 rounded-[2.5rem] p-10 flex flex-col items-center justify-center gap-6 hover:bg-white/10 transition-all duration-500 backdrop-blur-md group cursor-pointer shadow-2xl">
+                <div className="w-full relative aspect-square max-w-[280px] bg-white rounded-3xl flex items-center justify-center overflow-hidden shadow-[0_0_50px_rgba(255,255,255,0.15)] group-hover:shadow-[0_0_60px_rgba(255,255,255,0.25)] transition-all duration-500 ring-8 ring-white/5">
                   <Image
                     src="/instagram-qr.png"
                     alt="Instagram QR Code"
                     fill
-                    className="object-contain p-4 group-hover:scale-105 transition-transform duration-700"
+                    className="object-contain p-6 group-hover:scale-105 transition-transform duration-700"
                     unoptimized
                   />
                 </div>
                 <div className="text-center">
-                  <h4 className="font-bold text-lg text-zinc-100 group-hover:text-purple-300 transition-colors tracking-tight">Scan to Follow</h4>
-                  <p className="text-sm text-zinc-400 mt-1 font-medium italic">@marcos_dj.uy</p>
+                  <h4 className="font-bold text-xl text-zinc-100 group-hover:text-purple-300 transition-colors tracking-tight">Scan to Follow</h4>
+                  <p className="text-sm text-zinc-400 mt-2 font-medium">@marcos_dj.uy</p>
+                  <p className="text-[10px] text-zinc-500 mt-4 italic">Tip: If it doesn't scan, try lowering your screen brightness slightly.</p>
                 </div>
               </div>
             </div>
