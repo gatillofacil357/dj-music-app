@@ -206,8 +206,8 @@ export default function Home() {
                         <button
                           onClick={() => isInPlaylist ? removeFromPlaylist(song.id) : addToPlaylist(song)}
                           className={`w-10 h-10 shrink-0 rounded-full flex items-center justify-center shadow-lg transform transition-transform duration-300 active:scale-95 ${isInPlaylist
-                              ? "bg-red-500 text-white hover:bg-red-600"
-                              : "bg-white/10 text-white hover:bg-white/20 border border-white/20"
+                            ? "bg-red-500 text-white hover:bg-red-600"
+                            : "bg-white/10 text-white hover:bg-white/20 border border-white/20"
                             }`}
                         >
                           {isInPlaylist ? (
@@ -306,19 +306,22 @@ export default function Home() {
               </div>
             )}
 
-            {/* Sponsor Banner */}
+            {/* Sponsor Banner / QR Section */}
             <div className="mt-8 pt-6 border-t border-white/10">
-              <p className="text-[10px] text-zinc-500 uppercase tracking-widest font-semibold mb-3 text-center">Sponsored By</p>
+              <p className="text-[10px] text-zinc-500 uppercase tracking-widest font-semibold mb-3 text-center">Follow on Instagram</p>
               <div className="bg-white/5 border border-white/10 rounded-2xl p-4 flex flex-col items-center justify-center gap-3 hover:bg-white/10 transition-colors backdrop-blur-sm group cursor-pointer">
-                <div className="w-full h-24 bg-gradient-to-br from-indigo-500/20 to-purple-500/20 rounded-xl flex items-center justify-center relative overflow-hidden">
-                  <div className="absolute inset-0 bg-black/20 group-hover:bg-transparent transition-colors z-10" />
-                  <svg className="w-10 h-10 text-white/50 group-hover:text-white/80 transition-colors z-20" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                  </svg>
+                <div className="w-full relative aspect-square max-w-[180px] bg-gradient-to-br from-indigo-500/10 to-purple-500/10 rounded-xl flex items-center justify-center overflow-hidden">
+                  <Image
+                    src="/instagram-qr.png"
+                    alt="Instagram QR Code"
+                    fill
+                    className="object-contain p-2 group-hover:scale-105 transition-transform duration-500"
+                    unoptimized
+                  />
                 </div>
                 <div className="text-center">
-                  <h4 className="font-semibold text-sm text-zinc-100 group-hover:text-purple-300 transition-colors">Premium Brand Name</h4>
-                  <p className="text-xs text-zinc-400 mt-1">Get 20% off with promo code DJMUSIC</p>
+                  <h4 className="font-semibold text-sm text-zinc-100 group-hover:text-purple-300 transition-colors">Scan to Follow</h4>
+                  <p className="text-xs text-zinc-400 mt-1">Support the DJ & see upcoming events!</p>
                 </div>
               </div>
             </div>
