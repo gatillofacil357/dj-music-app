@@ -58,8 +58,12 @@ export async function POST(request: Request) {
             .select();
 
         if (error) {
-            console.error("Supabase POST Error:", error);
-            return NextResponse.json({ error: error.message }, { status: 500 });
+            console.error("Supabase POST Error (Detailed):", JSON.stringify(error, null, 2));
+            return NextResponse.json({
+                error: error.message,
+                details: error.details,
+                hint: error.hint
+            }, { status: 500 });
         }
 
         return NextResponse.json(data);
