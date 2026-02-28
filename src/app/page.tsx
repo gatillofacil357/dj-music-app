@@ -307,21 +307,21 @@ export default function Home() {
             )}
 
             {/* Sponsor Banner / QR Section */}
-            <div className="mt-8 pt-6 border-t border-white/10">
-              <p className="text-[10px] text-zinc-500 uppercase tracking-widest font-semibold mb-3 text-center">Follow on Instagram</p>
-              <div className="bg-white/5 border border-white/10 rounded-2xl p-4 flex flex-col items-center justify-center gap-3 hover:bg-white/10 transition-colors backdrop-blur-sm group cursor-pointer">
-                <div className="w-full relative aspect-square max-w-[180px] bg-gradient-to-br from-indigo-500/10 to-purple-500/10 rounded-xl flex items-center justify-center overflow-hidden">
+            <div className="mt-10 pt-8 border-t border-white/10">
+              <p className="text-[11px] text-zinc-400 uppercase tracking-widest font-bold mb-5 text-center">Follow on Instagram</p>
+              <div className="bg-white/5 border border-white/10 rounded-[2rem] p-8 flex flex-col items-center justify-center gap-6 hover:bg-white/10 transition-all duration-500 backdrop-blur-md group cursor-pointer shadow-2xl">
+                <div className="w-full relative aspect-square max-w-[260px] bg-white rounded-2xl flex items-center justify-center overflow-hidden shadow-[0_0_40px_rgba(255,255,255,0.1)] group-hover:shadow-[0_0_50px_rgba(255,255,255,0.2)] transition-all duration-500">
                   <Image
                     src="/instagram-qr.png"
                     alt="Instagram QR Code"
                     fill
-                    className="object-contain p-2 group-hover:scale-105 transition-transform duration-500"
+                    className="object-contain p-4 group-hover:scale-105 transition-transform duration-700"
                     unoptimized
                   />
                 </div>
                 <div className="text-center">
-                  <h4 className="font-semibold text-sm text-zinc-100 group-hover:text-purple-300 transition-colors">Scan to Follow</h4>
-                  <p className="text-xs text-zinc-400 mt-1">Support the DJ & see upcoming events!</p>
+                  <h4 className="font-bold text-lg text-zinc-100 group-hover:text-purple-300 transition-colors tracking-tight">Scan to Follow</h4>
+                  <p className="text-sm text-zinc-400 mt-1 font-medium italic">@marcos_dj.uy</p>
                 </div>
               </div>
             </div>
