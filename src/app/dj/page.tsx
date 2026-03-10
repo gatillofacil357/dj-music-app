@@ -100,26 +100,26 @@ export default function DjDashboard() {
                             )}
                         </div>
                         <h1 className="text-4xl md:text-5xl font-black tracking-tight text-white mb-2 uppercase font-mono">
-                            DJ Control
+                            Control DJ
                         </h1>
-                        <p className="text-zinc-500 text-lg font-mono">Queue Manager v2</p>
+                        <p className="text-zinc-500 text-lg font-mono">Gestor de Cola v2</p>
                     </div>
                     <div className="flex flex-wrap gap-3">
                         <button
                             onClick={toggleRequests}
                             className={`px-5 py-3 rounded-lg font-bold flex items-center gap-2 transition-all border ${requestsPaused ? 'bg-red-500/10 text-red-500 border-red-500/50 hover:bg-red-500/20' : 'bg-zinc-800 text-zinc-300 hover:bg-zinc-700 border-zinc-700'}`}
                         >
-                            {requestsPaused ? 'Resume Requests' : 'Pause Requests'}
+                            {requestsPaused ? 'Reanudar Pedidos' : 'Pausar Pedidos'}
                         </button>
                         <button onClick={clearPlaylist} className="px-5 py-3 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 border border-zinc-700 transition-colors font-bold flex items-center gap-2">
-                            Clear All
+                            Limpiar Todo
                         </button>
                     </div>
                 </header>
 
                 <div className="bg-[#18181b] border border-[#27272a] rounded-2xl p-4 md:p-6 shadow-2xl">
                     <div className="flex items-center justify-between mb-6 pb-4 border-b border-[#27272a]">
-                        <h2 className="text-2xl font-bold font-mono text-white">QUEUE</h2>
+                        <h2 className="text-2xl font-bold font-mono text-white">COLA</h2>
                         <div className="bg-[#09090b] px-4 py-2 rounded font-mono text-emerald-400 border border-[#27272a]">
                             TOTAL: <span className="font-bold text-lg">{playlist.length}</span>
                         </div>
@@ -131,8 +131,8 @@ export default function DjDashboard() {
                                 <svg className="w-20 h-20 mb-4 opacity-50" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" />
                                 </svg>
-                                <p className="text-2xl font-medium text-zinc-400">Queue is empty</p>
-                                <p className="text-lg">Waiting for clients to request songs...</p>
+                                <p className="text-2xl font-medium text-zinc-400">La cola está vacía</p>
+                                <p className="text-lg">Esperando que la gente pida canciones...</p>
                             </div>
                         ) : (
                             playlist.map((song, index) => (
@@ -163,7 +163,7 @@ export default function DjDashboard() {
                                                         <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 10l7-7m0 0l7 7m-7-7v18" />
                                                         </svg>
-                                                        {song.requests_count} VOTES
+                                                        {song.requests_count} VOTOS
                                                     </span>
                                                 )}
                                             </div>
@@ -175,7 +175,7 @@ export default function DjDashboard() {
                                             onClick={() => markAsPlayed(song.id)}
                                             className="w-full md:w-auto px-6 py-3 bg-[#09090b] hover:bg-emerald-500 hover:text-black text-zinc-300 font-bold font-mono rounded-lg transition-all duration-300 active:scale-95 flex items-center justify-center gap-2 border border-[#27272a] hover:border-emerald-500"
                                         >
-                                            PLAYED
+                                            TOCADA
                                         </button>
                                     </div>
                                 </div>

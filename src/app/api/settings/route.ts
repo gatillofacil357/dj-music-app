@@ -14,7 +14,7 @@ export async function GET() {
         }
 
         return NextResponse.json({ requestsPaused: data.title === 'true' });
-    } catch (error) {
+    } catch {
         return NextResponse.json({ requestsPaused: false });
     }
 }

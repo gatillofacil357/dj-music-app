@@ -106,7 +106,7 @@ export default function Home() {
         const data = await response.json();
 
         // Map iTunes results to our Song interface
-        const fetchedSongs: Song[] = data.results.map((track: any) => ({
+        const fetchedSongs: Song[] = data.results.map((track: { trackId: number, trackName: string, artistName: string, collectionName: string, artworkUrl100: string, trackTimeMillis: number }) => ({
           id: track.trackId?.toString() || Math.random().toString(),
           title: track.trackName || "Unknown Title",
           artist: track.artistName || "Unknown Artist",
@@ -149,9 +149,9 @@ export default function Home() {
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
               <div>
                 <h1 className="text-4xl md:text-5xl font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-purple-400 to-blue-400">
-                  Discover
+                  Descubrir
                 </h1>
-                <p className="text-zinc-400 text-lg mt-1">Find your next favorite track.</p>
+                <p className="text-zinc-400 text-lg mt-1">Encuentra tu próximo tema favorito.</p>
               </div>
               <div className="flex items-center gap-3">
 
@@ -168,7 +168,7 @@ export default function Home() {
             </div>
             <input
               type="text"
-              placeholder="Search ANY song or artist globally..."
+              placeholder="Busca CUALQUIER canción o artista mundialmente..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               disabled={requestsPaused}
@@ -248,7 +248,7 @@ export default function Home() {
                 })
               ) : (
                 <div className="col-span-full py-12 text-center text-zinc-500">
-                  No songs found matching "{searchTerm}"
+                  No se encontraron canciones para &quot;{searchTerm}&quot;
                 </div>
               )}
             </div>
@@ -275,10 +275,10 @@ export default function Home() {
                 <svg className="w-6 h-6 text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" />
                 </svg>
-                Live Queue
+                En Vivo (Cola)
               </h2>
               <span className="bg-purple-500/20 text-purple-300 text-xs font-bold px-3 py-1 rounded-full">
-                {playlist.length} track{playlist.length !== 1 && 's'}
+                {playlist.length} canción{playlist.length !== 1 && 'es'}
               </span>
             </header>
 
@@ -288,8 +288,8 @@ export default function Home() {
                   <svg className="w-16 h-16 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
                   </svg>
-                  <p className="text-center font-medium">Your playlist is empty.</p>
-                  <p className="text-sm text-center">Add some tracks from the library!</p>
+                  <p className="text-center font-medium">La cola está vacía.</p>
+                  <p className="text-sm text-center">¡Agrega unas cuantas pistas de la biblioteca!</p>
                 </div>
               ) : (
                 playlist.map((song, index) => (
@@ -312,11 +312,11 @@ export default function Home() {
                         <span className="truncate">{song.artist}</span>
                       </div>
                     </div>
-                    {song.requests_count && song.requests_count > 1 && (
+                    {song.requests_count && song.requests_count > 1 ? (
                       <div className="bg-purple-500/20 text-purple-300 px-2 py-1 rounded text-xs font-bold shrink-0">
-                        {song.requests_count} votes
+                        {song.requests_count} votos
                       </div>
-                    )}
+                    ) : null}
                   </div>
                 ))
               )}
@@ -326,7 +326,7 @@ export default function Home() {
 
             {/* Sponsor Banner / QR Section */}
             <div className="mt-12 pt-8 border-t border-white/10">
-              <p className="text-[11px] text-zinc-400 uppercase tracking-widest font-bold mb-6 text-center">Follow on Instagram</p>
+              <p className="text-[11px] text-zinc-400 uppercase tracking-widest font-bold mb-6 text-center">Sígueme en Instagram</p>
               <div className="bg-white/5 border border-white/10 rounded-[2.5rem] p-10 flex flex-col items-center justify-center gap-6 hover:bg-white/10 transition-all duration-500 backdrop-blur-md group cursor-pointer shadow-2xl">
                 <div className="w-full relative aspect-square max-w-[280px] bg-white rounded-3xl flex items-center justify-center overflow-hidden shadow-[0_0_50px_rgba(255,255,255,0.15)] group-hover:shadow-[0_0_60px_rgba(255,255,255,0.25)] transition-all duration-500 ring-8 ring-white/5">
                   <Image
@@ -338,9 +338,9 @@ export default function Home() {
                   />
                 </div>
                 <div className="text-center">
-                  <h4 className="font-bold text-xl text-zinc-100 group-hover:text-purple-300 transition-colors tracking-tight">Scan to Follow</h4>
+                  <h4 className="font-bold text-xl text-zinc-100 group-hover:text-purple-300 transition-colors tracking-tight">Escanea para Seguir</h4>
                   <p className="text-sm text-zinc-400 mt-2 font-medium">@marcos_dj.uy</p>
-                  <p className="text-[10px] text-zinc-500 mt-4 italic">Tip: If it doesn't scan, try lowering your screen brightness slightly.</p>
+                  <p className="text-[10px] text-zinc-500 mt-4 italic">Tip: Si no lee, baja un poco el brillo de tu celular.</p>
                 </div>
               </div>
             </div>
