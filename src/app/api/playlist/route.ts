@@ -9,7 +9,8 @@ export async function GET() {
         const { data: playlist, error } = await supabase
             .from('playlist')
             .select('*')
-            .order('created_at', { ascending: true }); // Keep them in order they were added
+            .order('requests_count', { ascending: false })
+            .order('created_at', { ascending: true }); // Keep them in order they were added if same count
 
         if (error) {
             // If table doesn't exist yet, we just return empty
@@ -34,12 +35,22 @@ export async function POST(request: Request) {
         // Check if song already exists
         const { data: existing } = await supabase
             .from('playlist')
-            .select('id')
+            .select('id, requests_count')
             .eq('id', song.id)
             .single();
 
         if (existing) {
-            return NextResponse.json({ message: 'Song already in playlist' }, { status: 200 });
+            // Upvote existing song
+            const newCount = (existing.requests_count || 1) + 1;
+            const { error: updateError } = await supabase
+                .from('playlist')
+                .update({ requests_count: newCount })
+                .eq('id', song.id);
+
+            if (updateError) {
+                return NextResponse.json({ error: 'Failed to upvote' }, { status: 500 });
+            }
+            return NextResponse.json({ message: 'Song already in playlist, upvoted!', upvoted: true, newCount }, { status: 200 });
         }
 
         // Prepare data for Supabase
@@ -49,6 +60,7 @@ export async function POST(request: Request) {
             artist: song.artist,
             coverUrl: song.coverUrl,
             duration: song.duration,
+            requests_count: 1
             // Let Supabase handle created_at
         };
 

@@ -5,6 +5,7 @@ export interface Song {
   album: string;
   coverUrl: string;
   duration: string;
+  requests_count?: number;
 }
 
 export const songs: Song[] = [

@@ -6,15 +6,24 @@ import { Song } from "../../data/songs";
 
 export default function DjDashboard() {
     const [playlist, setPlaylist] = useState<Song[]>([]);
+    const [requestsPaused, setRequestsPaused] = useState(false);
 
     // Fetch playlist continuously for multi-device sync
     useEffect(() => {
         const fetchPlaylist = async () => {
             try {
-                const res = await fetch("/api/playlist");
-                if (res.ok) {
-                    const data = await res.json();
-                    setPlaylist(data);
+                const [resPlaylist, resSettings] = await Promise.all([
+                    fetch("/api/playlist").catch(() => null),
+                    fetch("/api/settings").catch(() => null)
+                ]);
+
+                if (resPlaylist && resPlaylist.ok) {
+                    const data = await resPlaylist.json();
+                    setPlaylist(data.filter((s: Song) => s.id !== 'SYSTEM_SETTINGS'));
+                }
+                if (resSettings && resSettings.ok) {
+                    const settings = await resSettings.json();
+                    setRequestsPaused(settings.requestsPaused);
                 }
             } catch (e) {
                 console.error("Failed to fetch playlist", e);
@@ -54,44 +63,65 @@ export default function DjDashboard() {
         }
     };
 
+    const toggleRequests = async () => {
+        const newState = !requestsPaused;
+        setRequestsPaused(newState);
+        try {
+            await fetch("/api/settings", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ requestsPaused: newState })
+            });
+        } catch (e) {
+            console.error("Failed to toggle settings", e);
+        }
+    };
+
     return (
-        <div className="min-h-screen bg-[#0a0a0a] text-white font-sans selection:bg-purple-500/30">
-            {/* Background Effect */}
+        <div className="min-h-screen bg-[#121212] text-zinc-300 font-sans selection:bg-emerald-500/30">
+            {/* Professional DJ Background Effect */}
             <div className="fixed inset-0 z-0 overflow-hidden pointer-events-none">
-                <div className="absolute top-[-20%] left-[-10%] w-[50%] h-[50%] rounded-full bg-red-900/10 blur-[150px]" />
+                <div className="absolute top-0 left-0 w-full h-[30vh] bg-gradient-to-b from-[#1a1a1a] to-transparent" />
+                <div className="absolute top-[-20%] left-[-10%] w-[50%] h-[50%] rounded-full bg-emerald-900/5 blur-[150px]" />
+                <div className="absolute top-[20%] right-[-10%] w-[30%] h-[50%] rounded-full bg-blue-900/5 blur-[120px]" />
             </div>
 
-            <div className="relative z-10 max-w-5xl mx-auto p-6 md:p-12">
-                <header className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12 border-b border-white/10 pb-8">
+            <div className="relative z-10 max-w-6xl mx-auto p-4 md:p-8">
+                <header className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-8 bg-[#18181b] border border-[#27272a] p-6 rounded-2xl shadow-2xl">
                     <div>
                         <div className="flex items-center gap-3 mb-2">
-                            <span className="bg-red-500 text-white text-xs font-bold px-3 py-1 rounded-full uppercase tracking-widest flex items-center gap-2">
-                                <span className="w-2 h-2 rounded-full bg-white animate-pulse" /> Live System
+                            <span className="bg-emerald-500 text-black text-xs font-bold px-3 py-1 rounded-sm uppercase tracking-widest flex items-center gap-2">
+                                <span className="w-2 h-2 rounded-full bg-black animate-pulse" /> LIVE
                             </span>
+                            {requestsPaused && (
+                                <span className="bg-red-500/20 text-red-500 border border-red-500/50 text-xs font-bold px-3 py-1 rounded-sm uppercase tracking-widest flex items-center gap-2">
+                                    PAUSED
+                                </span>
+                            )}
                         </div>
-                        <h1 className="text-5xl md:text-6xl font-bold tracking-tight text-white mb-2">
-                            DJ Control Panel
+                        <h1 className="text-4xl md:text-5xl font-black tracking-tight text-white mb-2 uppercase font-mono">
+                            DJ Control
                         </h1>
-                        <p className="text-zinc-400 text-xl">Manage incoming client requests in real-time.</p>
+                        <p className="text-zinc-500 text-lg font-mono">Queue Manager v2</p>
                     </div>
-                    <div className="flex gap-4">
-                        <button onClick={clearPlaylist} className="px-6 py-3 rounded-xl bg-white/5 hover:bg-red-500/20 text-zinc-300 hover:text-red-400 border border-white/10 transition-colors font-semibold flex items-center gap-2">
-                            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                            </svg>
-                            Clear All
+                    <div className="flex flex-wrap gap-3">
+                        <button
+                            onClick={toggleRequests}
+                            className={`px-5 py-3 rounded-lg font-bold flex items-center gap-2 transition-all border ${requestsPaused ? 'bg-red-500/10 text-red-500 border-red-500/50 hover:bg-red-500/20' : 'bg-zinc-800 text-zinc-300 hover:bg-zinc-700 border-zinc-700'}`}
+                        >
+                            {requestsPaused ? 'Resume Requests' : 'Pause Requests'}
                         </button>
-                        <button className="px-6 py-3 rounded-xl bg-white text-black hover:bg-zinc-200 transition-colors font-bold shadow-xl">
-                            Refresh Now
+                        <button onClick={clearPlaylist} className="px-5 py-3 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 border border-zinc-700 transition-colors font-bold flex items-center gap-2">
+                            Clear All
                         </button>
                     </div>
                 </header>
 
-                <div className="bg-white/5 border border-white/10 rounded-3xl p-6 md:p-10 backdrop-blur-xl shadow-2xl">
-                    <div className="flex items-center justify-between mb-8">
-                        <h2 className="text-3xl font-bold">Requested Tracks</h2>
-                        <div className="bg-white/10 px-4 py-2 rounded-lg font-mono text-zinc-300">
-                            Queue: <span className="text-white font-bold text-lg">{playlist.length}</span>
+                <div className="bg-[#18181b] border border-[#27272a] rounded-2xl p-4 md:p-6 shadow-2xl">
+                    <div className="flex items-center justify-between mb-6 pb-4 border-b border-[#27272a]">
+                        <h2 className="text-2xl font-bold font-mono text-white">QUEUE</h2>
+                        <div className="bg-[#09090b] px-4 py-2 rounded font-mono text-emerald-400 border border-[#27272a]">
+                            TOTAL: <span className="font-bold text-lg">{playlist.length}</span>
                         </div>
                     </div>
 
@@ -108,13 +138,13 @@ export default function DjDashboard() {
                             playlist.map((song, index) => (
                                 <div
                                     key={song.id}
-                                    className="group bg-black/40 hover:bg-white/10 border border-white/5 rounded-2xl p-4 md:p-6 flex flex-col md:flex-row md:items-center gap-6 transition-all duration-300"
+                                    className="group bg-[#09090b] hover:bg-[#121212] border border-[#27272a] hover:border-emerald-500/30 rounded-xl p-3 md:p-4 flex flex-col md:flex-row md:items-center gap-4 transition-all duration-300"
                                 >
-                                    <div className="flex items-center gap-6 flex-1">
-                                        <div className="text-3xl font-bold text-zinc-700 w-12 text-center group-hover:text-zinc-500 transition-colors">
+                                    <div className="flex items-center gap-4 flex-1">
+                                        <div className="text-4xl font-black text-[#27272a] w-12 text-center font-mono">
                                             {index + 1}
                                         </div>
-                                        <div className="relative w-20 h-20 md:w-24 md:h-24 rounded-xl overflow-hidden shrink-0 shadow-lg">
+                                        <div className="relative w-16 h-16 md:w-20 md:h-20 rounded-lg overflow-hidden shrink-0 shadow-lg">
                                             <Image
                                                 src={song.coverUrl}
                                                 alt={song.album}
@@ -124,24 +154,28 @@ export default function DjDashboard() {
                                             />
                                         </div>
                                         <div className="flex-1 min-w-0">
-                                            <h3 className="font-bold text-xl md:text-2xl text-white truncate max-w-[90%]">{song.title}</h3>
-                                            <p className="text-zinc-400 text-lg mt-1 truncate max-w-[90%]">{song.artist}</p>
-                                            <div className="flex items-center gap-3 mt-2 text-sm text-zinc-500">
-                                                <span className="bg-white/5 px-2 py-1 rounded">{song.duration}</span>
-                                                <span>Added just now</span>
+                                            <h3 className="font-bold text-lg md:text-xl text-white truncate max-w-[90%] font-mono">{song.title}</h3>
+                                            <p className="text-zinc-500 text-sm mt-1 truncate max-w-[90%] font-mono">{song.artist}</p>
+                                            <div className="flex items-center gap-3 mt-2 text-xs font-mono text-zinc-500">
+                                                <span className="bg-[#18181b] px-2 py-1 rounded border border-[#27272a]">{song.duration}</span>
+                                                {song.requests_count && song.requests_count > 1 && (
+                                                    <span className="bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-2 py-1 flex items-center gap-1 font-bold rounded">
+                                                        <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 10l7-7m0 0l7 7m-7-7v18" />
+                                                        </svg>
+                                                        {song.requests_count} VOTES
+                                                    </span>
+                                                )}
                                             </div>
                                         </div>
                                     </div>
 
-                                    <div className="flex justify-end pt-4 md:pt-0 border-t border-white/5 md:border-t-0 shrink-0">
+                                    <div className="flex justify-end pt-4 md:pt-0 shrink-0">
                                         <button
                                             onClick={() => markAsPlayed(song.id)}
-                                            className="w-full md:w-auto px-8 py-4 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-white font-bold rounded-xl shadow-[0_0_20px_rgba(16,185,129,0.3)] hover:shadow-[0_0_30px_rgba(16,185,129,0.5)] transition-all duration-300 active:scale-95 flex items-center justify-center gap-3"
+                                            className="w-full md:w-auto px-6 py-3 bg-[#09090b] hover:bg-emerald-500 hover:text-black text-zinc-300 font-bold font-mono rounded-lg transition-all duration-300 active:scale-95 flex items-center justify-center gap-2 border border-[#27272a] hover:border-emerald-500"
                                         >
-                                            <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                                            </svg>
-                                            Mark as Played
+                                            PLAYED
                                         </button>
                                     </div>
                                 </div>

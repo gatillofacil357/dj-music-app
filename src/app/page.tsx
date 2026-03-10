@@ -10,6 +10,15 @@ export default function Home() {
   const [discoverSongs, setDiscoverSongs] = useState<Song[]>(songs);
   const [loading, setLoading] = useState(false);
   const [notification, setNotification] = useState<string | null>(null);
+  const [requestsPaused, setRequestsPaused] = useState(false);
+  const [userRequestsCount, setUserRequestsCount] = useState(0);
+  const REQUEST_LIMIT = 5;
+
+  useEffect(() => {
+    // Load local limit
+    const stored = localStorage.getItem('dj_user_requests');
+    if (stored) setUserRequestsCount(parseInt(stored, 10));
+  }, []);
 
   const showNotification = (msg: string) => {
     setNotification(msg);
@@ -20,10 +29,18 @@ export default function Home() {
   useEffect(() => {
     const fetchPlaylist = async () => {
       try {
-        const res = await fetch("/api/playlist");
-        if (res.ok) {
-          const data = await res.json();
-          setPlaylist(data);
+        const [resPlaylist, resSettings] = await Promise.all([
+          fetch("/api/playlist").catch(() => null),
+          fetch("/api/settings").catch(() => null)
+        ]);
+
+        if (resPlaylist && resPlaylist.ok) {
+          const data = await resPlaylist.json();
+          setPlaylist(data.filter((s: Song) => s.id !== 'SYSTEM_SETTINGS'));
+        }
+        if (resSettings && resSettings.ok) {
+          const settings = await resSettings.json();
+          setRequestsPaused(settings.requestsPaused);
         }
       } catch (e) {
         console.error("Failed to fetch playlist", e);
@@ -36,35 +53,38 @@ export default function Home() {
   }, []);
 
   const addToPlaylist = async (song: Song) => {
-    // Optimistic UI update
-    if (!playlist.find((s) => s.id === song.id)) {
-      setPlaylist([...playlist, song]);
-      showNotification(`✔️ Añadida: ${song.title}`);
-      try {
-        await fetch("/api/playlist", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(song),
-        });
-      } catch (e) {
-        console.error("Failed to sync add song", e);
-      }
+    if (requestsPaused) {
+      showNotification("❌ Pedidos pausados temporalmente por el DJ");
+      return;
     }
-  };
+    if (userRequestsCount >= REQUEST_LIMIT) {
+      showNotification("⏳ Límite de pedidos alcanzado por ahora. ¡Disfruta la música!");
+      return;
+    }
 
-  const removeFromPlaylist = async (songId: string) => {
     // Optimistic UI update
-    const songToRemove = playlist.find((s) => s.id === songId);
-    setPlaylist(playlist.filter((s) => s.id !== songId));
-    if (songToRemove) showNotification(`❌ Eliminada: ${songToRemove.title}`);
+    const isAlreadyIn = playlist.find((s) => s.id === song.id);
+    if (!isAlreadyIn) {
+      setPlaylist([...playlist, { ...song, requests_count: 1 }]);
+      showNotification(`✔️ Añadida a la cola: ${song.title}`);
+    } else {
+      setPlaylist(playlist.map(s => s.id === song.id ? { ...s, requests_count: (s.requests_count || 1) + 1 } : s));
+      showNotification(`🔥 ¡Votaste por: ${song.title}!`);
+    }
+
+    // Rate limit
+    const newCount = userRequestsCount + 1;
+    setUserRequestsCount(newCount);
+    localStorage.setItem('dj_user_requests', newCount.toString());
+
     try {
       await fetch("/api/playlist", {
-        method: "DELETE",
+        method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id: songId }),
+        body: JSON.stringify(song),
       });
     } catch (e) {
-      console.error("Failed to sync remove song", e);
+      console.error("Failed to sync add song", e);
     }
   };
 
@@ -151,8 +171,23 @@ export default function Home() {
               placeholder="Search ANY song or artist globally..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 pl-12 pr-4 text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-transparent transition-all backdrop-blur-md"
+              disabled={requestsPaused}
+              className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 pl-12 pr-4 text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-transparent transition-all backdrop-blur-md disabled:opacity-50"
             />
+          </div>
+
+          {/* Quick Filters */}
+          <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+            {['Cumbia', 'RKT', 'Reggaeton', 'Electrónica', 'Pop', 'Rock'].map(genre => (
+              <button
+                key={genre}
+                onClick={() => setSearchTerm(genre)}
+                disabled={requestsPaused}
+                className="whitespace-nowrap px-4 py-2 rounded-full bg-white/5 hover:bg-white/10 border border-white/10 text-sm font-medium transition-colors disabled:opacity-50"
+              >
+                {genre}
+              </button>
+            ))}
           </div>
 
           {/* Song Grid */}
@@ -190,15 +225,16 @@ export default function Home() {
                           <p className="text-zinc-400 text-sm truncate">{song.artist}</p>
                         </div>
                         <button
-                          onClick={() => isInPlaylist ? removeFromPlaylist(song.id) : addToPlaylist(song)}
-                          className={`w-10 h-10 shrink-0 rounded-full flex items-center justify-center shadow-lg transform transition-transform duration-300 active:scale-95 ${isInPlaylist
-                            ? "bg-red-500 text-white hover:bg-red-600"
+                          onClick={() => addToPlaylist(song)}
+                          disabled={requestsPaused}
+                          className={`w-10 h-10 shrink-0 rounded-full flex items-center justify-center shadow-lg transform transition-transform duration-300 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed ${isInPlaylist
+                            ? "bg-purple-500 text-white hover:bg-purple-600"
                             : "bg-white/10 text-white hover:bg-white/20 border border-white/20"
                             }`}
                         >
                           {isInPlaylist ? (
                             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4" />
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
                             </svg>
                           ) : (
                             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -217,6 +253,18 @@ export default function Home() {
               )}
             </div>
           )}
+
+          {requestsPaused && (
+            <div className="absolute inset-0 z-20 bg-black/40 backdrop-blur-sm rounded-3xl flex items-center justify-center">
+              <div className="bg-white/10 border border-white/20 p-8 rounded-2xl flex flex-col items-center gap-4 text-center max-w-sm">
+                <svg className="w-16 h-16 text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                </svg>
+                <h3 className="text-2xl font-bold">Pedidos Pausados</h3>
+                <p className="text-zinc-300">El DJ está mezclando en vivo o la lista de canciones ya está llena. ¡Disfruta la música!</p>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Right Column: Playlist */}
@@ -227,7 +275,7 @@ export default function Home() {
                 <svg className="w-6 h-6 text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" />
                 </svg>
-                My Playlist
+                Live Queue
               </h2>
               <span className="bg-purple-500/20 text-purple-300 text-xs font-bold px-3 py-1 rounded-full">
                 {playlist.length} track{playlist.length !== 1 && 's'}
@@ -262,19 +310,13 @@ export default function Home() {
                       <h4 className="font-medium text-sm text-zinc-100 truncate">{song.title}</h4>
                       <div className="flex items-center gap-2 text-xs text-zinc-400">
                         <span className="truncate">{song.artist}</span>
-                        <span>•</span>
-                        <span>{song.duration}</span>
                       </div>
                     </div>
-                    <button
-                      onClick={() => removeFromPlaylist(song.id)}
-                      className="w-8 h-8 rounded-full flex items-center justify-center text-zinc-400 hover:text-red-400 hover:bg-red-400/10 transition-colors opacity-0 group-hover:opacity-100 focus:opacity-100"
-                      title="Remove from playlist"
-                    >
-                      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                      </svg>
-                    </button>
+                    {song.requests_count && song.requests_count > 1 && (
+                      <div className="bg-purple-500/20 text-purple-300 px-2 py-1 rounded text-xs font-bold shrink-0">
+                        {song.requests_count} votes
+                      </div>
+                    )}
                   </div>
                 ))
               )}
