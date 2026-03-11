@@ -11,14 +11,6 @@ export default function Home() {
   const [loading, setLoading] = useState(false);
   const [notification, setNotification] = useState<string | null>(null);
   const [requestsPaused, setRequestsPaused] = useState(false);
-  const [userRequestsCount, setUserRequestsCount] = useState(0);
-  const REQUEST_LIMIT = 5;
-
-  useEffect(() => {
-    // Load local limit
-    const stored = localStorage.getItem('dj_user_requests');
-    if (stored) setUserRequestsCount(parseInt(stored, 10));
-  }, []);
 
   const showNotification = (msg: string) => {
     setNotification(msg);
@@ -57,10 +49,6 @@ export default function Home() {
       showNotification("❌ Pedidos pausados temporalmente por el DJ");
       return;
     }
-    if (userRequestsCount >= REQUEST_LIMIT) {
-      showNotification("⏳ Límite de pedidos alcanzado por ahora. ¡Disfruta la música!");
-      return;
-    }
 
     // Optimistic UI update
     const isAlreadyIn = playlist.find((s) => s.id === song.id);
@@ -71,11 +59,6 @@ export default function Home() {
       setPlaylist(playlist.map(s => s.id === song.id ? { ...s, requests_count: (s.requests_count || 1) + 1 } : s));
       showNotification(`🔥 ¡Votaste por: ${song.title}!`);
     }
-
-    // Rate limit
-    const newCount = userRequestsCount + 1;
-    setUserRequestsCount(newCount);
-    localStorage.setItem('dj_user_requests', newCount.toString());
 
     try {
       await fetch("/api/playlist", {
