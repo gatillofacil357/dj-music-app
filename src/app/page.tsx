@@ -284,11 +284,13 @@ export default function Home() {
                 }).map((song, index) => (
                   <div
                     key={song.id}
-                    className={`group border rounded-xl p-3 flex items-center gap-4 transition-all duration-300 ${
+                    onClick={() => addToPlaylist(song)}
+                    className={`group border rounded-xl p-3 flex items-center gap-4 transition-all duration-300 cursor-pointer active:scale-[0.98] ${
                         song.status === 'playing' ? 'bg-purple-900/40 border-purple-500/50 shadow-[0_0_15px_rgba(168,85,247,0.2)]' : 
-                        song.status === 'played' ? 'bg-white/5 border-white/5 opacity-50 grayscale' : 
+                        song.status === 'played' ? 'bg-white/5 border-white/5 opacity-50 grayscale hover:opacity-100 hover:grayscale-0' : 
                         'bg-white/5 hover:bg-white/10 border-white/5'
                     }`}
+                    title="Click para votar por esta canción"
                   >
                     <div className="relative w-12 h-12 rounded-lg overflow-hidden shrink-0 shadow-md">
                       <Image
