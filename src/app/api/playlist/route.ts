@@ -35,16 +35,20 @@ export async function POST(request: Request) {
         // Check if song already exists
         const { data: existing } = await supabase
             .from('playlist')
-            .select('id, requests_count')
+            .select('id, requests_count, status')
             .eq('id', song.id)
             .single();
 
         if (existing) {
             // Upvote existing song
             const newCount = (existing.requests_count || 1) + 1;
+            const updateFields = existing.status === 'played' 
+                ? { requests_count: newCount, status: 'queued' } 
+                : { requests_count: newCount };
+
             const { error: updateError } = await supabase
                 .from('playlist')
-                .update({ requests_count: newCount })
+                .update(updateFields)
                 .eq('id', song.id);
 
             if (updateError) {
@@ -60,7 +64,8 @@ export async function POST(request: Request) {
             artist: song.artist,
             coverUrl: song.coverUrl,
             duration: song.duration,
-            requests_count: 1
+            requests_count: 1,
+            status: 'queued'
             // Let Supabase handle created_at
         };
 
@@ -103,5 +108,27 @@ export async function DELETE(request: Request) {
     } catch (error) {
         console.error("DELETE Exception:", error);
         return NextResponse.json({ error: 'Failed to delete song' }, { status: 500 });
+    }
+}
+
+export async function PATCH(request: Request) {
+    try {
+        const { id, status } = await request.json();
+
+        const { data, error } = await supabase
+            .from('playlist')
+            .update({ status })
+            .eq('id', id)
+            .select();
+
+        if (error) {
+            console.error("Supabase PATCH Error:", error);
+            return NextResponse.json({ error: error.message }, { status: 500 });
+        }
+
+        return NextResponse.json(data);
+    } catch (error) {
+        console.error("PATCH Exception:", error);
+        return NextResponse.json({ error: 'Failed to update song status' }, { status: 500 });
     }
 }

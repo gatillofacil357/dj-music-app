@@ -6,6 +6,7 @@ export interface Song {
   coverUrl: string;
   duration: string;
   requests_count?: number;
+  status?: 'queued' | 'playing' | 'played';
 }
 
 export const songs: Song[] = [

@@ -35,7 +35,21 @@ export default function DjDashboard() {
         return () => clearInterval(interval);
     }, []);
 
-    const markAsPlayed = async (songId: string) => {
+    const updateSongStatus = async (songId: string, status: 'queued' | 'playing' | 'played') => {
+        // Optimistic UI update
+        setPlaylist(playlist.map((s) => s.id === songId ? { ...s, status } : s));
+        try {
+            await fetch("/api/playlist", {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ id: songId, status }),
+            });
+        } catch (e) {
+            console.error("Failed to sync update song", e);
+        }
+    };
+
+    const removeSong = async (songId: string) => {
         // Optimistic UI update
         setPlaylist(playlist.filter((s) => s.id !== songId));
         try {
@@ -135,10 +149,20 @@ export default function DjDashboard() {
                                 <p className="text-lg">Esperando que la gente pida canciones...</p>
                             </div>
                         ) : (
-                            playlist.map((song, index) => (
+                            [...playlist].sort((a, b) => {
+                                const order = { 'playing': 0, 'queued': 1, 'played': 2 };
+                                const aStatus = a.status || 'queued';
+                                const bStatus = b.status || 'queued';
+                                if (order[aStatus] !== order[bStatus]) return order[aStatus] - order[bStatus];
+                                return (b.requests_count || 1) - (a.requests_count || 1);
+                            }).map((song, index) => (
                                 <div
                                     key={song.id}
-                                    className="group bg-[#09090b] hover:bg-[#121212] border border-[#27272a] hover:border-emerald-500/30 rounded-xl p-3 md:p-4 flex flex-col md:flex-row md:items-center gap-4 transition-all duration-300"
+                                    className={`group hover:bg-[#121212] border hover:border-emerald-500/30 rounded-xl p-3 md:p-4 flex flex-col md:flex-row md:items-center gap-4 transition-all duration-300 ${
+                                        song.status === 'playing' ? 'bg-emerald-500/5 border-emerald-500/50 ring-1 ring-emerald-500/30' : 
+                                        song.status === 'played' ? 'bg-[#09090b] border-[#27272a] opacity-50 grayscale-[50%]' : 
+                                        'bg-[#09090b] border-[#27272a]'
+                                    }`}
                                 >
                                     <div className="flex items-center gap-4 flex-1">
                                         <div className="text-4xl font-black text-[#27272a] w-12 text-center font-mono">
@@ -170,12 +194,49 @@ export default function DjDashboard() {
                                         </div>
                                     </div>
 
-                                    <div className="flex justify-end pt-4 md:pt-0 shrink-0">
+                                    <div className="flex justify-end pt-4 md:pt-0 shrink-0 gap-2">
+                                        {(!song.status || song.status === 'queued') && (
+                                            <button
+                                                onClick={() => updateSongStatus(song.id, 'playing')}
+                                                className="w-full md:w-auto px-4 py-2 bg-emerald-500/10 hover:bg-emerald-500 text-emerald-400 hover:text-black font-bold font-mono rounded-lg transition-all duration-300 active:scale-95 border border-emerald-500/30 hover:border-emerald-500 flex items-center justify-center gap-2"
+                                            >
+                                                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/>
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                                </svg>
+                                                PLAY
+                                            </button>
+                                        )}
+                                        
+                                        {song.status !== 'played' && (
+                                            <button
+                                                onClick={() => updateSongStatus(song.id, 'played')}
+                                                className="w-full md:w-auto px-4 py-2 bg-[#09090b] hover:bg-zinc-700 text-zinc-300 font-bold font-mono rounded-lg transition-all duration-300 active:scale-95 border border-[#27272a] hover:border-zinc-500 flex items-center justify-center gap-2"
+                                            >
+                                                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                                </svg>
+                                                TOCADA
+                                            </button>
+                                        )}
+
+                                        {song.status === 'played' && (
+                                            <button
+                                                onClick={() => updateSongStatus(song.id, 'queued')}
+                                                className="w-full md:w-auto px-4 py-2 bg-[#09090b] hover:bg-zinc-700 text-zinc-500 hover:text-zinc-300 font-bold font-mono rounded-lg transition-all duration-300 active:scale-95 border border-[#27272a] hover:border-zinc-500 flex items-center justify-center gap-2"
+                                            >
+                                                RESTAURAR
+                                            </button>
+                                        )}
+                                        
                                         <button
-                                            onClick={() => markAsPlayed(song.id)}
-                                            className="w-full md:w-auto px-6 py-3 bg-[#09090b] hover:bg-emerald-500 hover:text-black text-zinc-300 font-bold font-mono rounded-lg transition-all duration-300 active:scale-95 flex items-center justify-center gap-2 border border-[#27272a] hover:border-emerald-500"
+                                            onClick={() => removeSong(song.id)}
+                                            className="w-full md:w-auto p-2 bg-red-500/10 hover:bg-red-500 text-red-500 hover:text-white rounded-lg transition-all duration-300 active:scale-95 border border-red-500/30 hover:border-red-500 flex items-center justify-center"
+                                            title="Eliminar de la lista"
                                         >
-                                            TOCADA
+                                            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                            </svg>
                                         </button>
                                     </div>
                                 </div>

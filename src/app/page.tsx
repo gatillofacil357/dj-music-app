@@ -53,10 +53,10 @@ export default function Home() {
     // Optimistic UI update
     const isAlreadyIn = playlist.find((s) => s.id === song.id);
     if (!isAlreadyIn) {
-      setPlaylist([...playlist, { ...song, requests_count: 1 }]);
+      setPlaylist([...playlist, { ...song, requests_count: 1, status: 'queued' }]);
       showNotification(`✔️ Añadida a la cola: ${song.title}`);
     } else {
-      setPlaylist(playlist.map(s => s.id === song.id ? { ...s, requests_count: (s.requests_count || 1) + 1 } : s));
+      setPlaylist(playlist.map(s => s.id === song.id ? { ...s, requests_count: (s.requests_count || 1) + 1, status: s.status === 'played' ? 'queued' : s.status } : s));
       showNotification(`🔥 ¡Votaste por: ${song.title}!`);
     }
 
@@ -89,13 +89,13 @@ export default function Home() {
         const data = await response.json();
 
         // Map iTunes results to our Song interface
-        const fetchedSongs: Song[] = data.results.map((track: { trackId: number, trackName: string, artistName: string, collectionName: string, artworkUrl100: string, trackTimeMillis: number }) => ({
+        const fetchedSongs: Song[] = data.results.map((track: any) => ({
           id: track.trackId?.toString() || Math.random().toString(),
           title: track.trackName || "Unknown Title",
           artist: track.artistName || "Unknown Artist",
           album: track.collectionName || "Unknown Album",
-          coverUrl: track.artworkUrl100
-            ? track.artworkUrl100.replace("100x100bb", "600x600bb")
+          coverUrl: (track.artworkUrl100 || track.artworkUrl60 || track.artworkUrl30)
+            ? (track.artworkUrl100 || track.artworkUrl60 || track.artworkUrl30).replace("100x100bb", "600x600bb")
             : "https://images.unsplash.com/photo-1614680376573-df3480f0c6ff?q=80&w=200&auto=format&fit=crop",
           duration: track.trackTimeMillis
             ? `${Math.floor(track.trackTimeMillis / 60000)}:${Math.floor(
@@ -275,10 +275,20 @@ export default function Home() {
                   <p className="text-sm text-center">¡Agrega unas cuantas pistas de la biblioteca!</p>
                 </div>
               ) : (
-                playlist.map((song, index) => (
+                [...playlist].sort((a, b) => {
+                    const order = { 'playing': 0, 'queued': 1, 'played': 2 };
+                    const aStatus = a.status || 'queued';
+                    const bStatus = b.status || 'queued';
+                    if (order[aStatus] !== order[bStatus]) return order[aStatus] - order[bStatus];
+                    return (b.requests_count || 1) - (a.requests_count || 1);
+                }).map((song, index) => (
                   <div
                     key={song.id}
-                    className="group bg-white/5 hover:bg-white/10 border border-white/5 rounded-xl p-3 flex items-center gap-4 transition-all duration-300"
+                    className={`group border rounded-xl p-3 flex items-center gap-4 transition-all duration-300 ${
+                        song.status === 'playing' ? 'bg-purple-900/40 border-purple-500/50 shadow-[0_0_15px_rgba(168,85,247,0.2)]' : 
+                        song.status === 'played' ? 'bg-white/5 border-white/5 opacity-50 grayscale' : 
+                        'bg-white/5 hover:bg-white/10 border-white/5'
+                    }`}
                   >
                     <div className="relative w-12 h-12 rounded-lg overflow-hidden shrink-0 shadow-md">
                       <Image
@@ -290,13 +300,25 @@ export default function Home() {
                       />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <h4 className="font-medium text-sm text-zinc-100 truncate">{song.title}</h4>
+                      <h4 className="font-medium text-sm text-zinc-100 truncate flex items-center gap-2">
+                        {song.title}
+                        {song.status === 'playing' && (
+                            <span className="text-[10px] font-bold bg-purple-500 text-white px-1.5 py-0.5 rounded flex items-center gap-1 shrink-0">
+                                <span className="w-1.5 h-1.5 bg-white rounded-full animate-pulse" /> SONANDO
+                            </span>
+                        )}
+                        {song.status === 'played' && (
+                            <span className="text-[10px] font-bold bg-zinc-800 text-zinc-400 px-1.5 py-0.5 rounded border border-zinc-700 shrink-0">
+                                TOCADA
+                            </span>
+                        )}
+                      </h4>
                       <div className="flex items-center gap-2 text-xs text-zinc-400">
                         <span className="truncate">{song.artist}</span>
                       </div>
                     </div>
                     {song.requests_count && song.requests_count > 1 ? (
-                      <div className="bg-purple-500/20 text-purple-300 px-2 py-1 rounded text-xs font-bold shrink-0">
+                      <div className="bg-purple-500/20 text-purple-300 px-2 py-1 rounded text-xs font-bold shrink-0 border border-purple-500/30">
                         {song.requests_count} votos
                       </div>
                     ) : null}
