@@ -118,16 +118,16 @@ export default function Home() {
   }, [searchTerm]);
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a] text-white font-sans selection:bg-purple-500/30">
+    <div className="h-screen w-screen overflow-hidden bg-[#0a0a0a] text-white font-sans selection:bg-purple-500/30">
       {/* Dynamic Background */}
       <div className="fixed inset-0 z-0 overflow-hidden pointer-events-none">
         <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] rounded-full bg-purple-900/20 blur-[120px]" />
         <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] rounded-full bg-blue-900/20 blur-[120px]" />
       </div>
 
-      <div className="relative z-10 flex flex-col md:flex-row min-h-screen max-w-7xl mx-auto p-4 md:p-6 gap-6 md:gap-8">
+      <div className="relative z-10 flex flex-col md:flex-row h-full w-full max-w-[1600px] xl:max-w-[1800px] mx-auto p-3 md:p-4 lg:p-6 gap-4 md:gap-6 overflow-hidden">
         {/* Left Column: Music Library */}
-        <div className="flex-1 flex flex-col gap-6">
+        <div className="flex-1 flex flex-col gap-4 h-full overflow-hidden">
           <header className="flex flex-col gap-4 pt-4 mb-2">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
               <div>
@@ -174,15 +174,16 @@ export default function Home() {
           </div>
 
           {/* Song Grid */}
-          {loading ? (
-            <div className="flex justify-center items-center py-20 text-purple-400">
-              <svg className="animate-spin h-10 w-10" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-              </svg>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 pb-20 md:pb-0">
+          <div className="flex-1 overflow-y-auto pr-2 pb-4 scrollbar-hide relative">
+            {loading ? (
+              <div className="flex justify-center items-center h-full text-purple-400 min-h-[50vh]">
+                <svg className="animate-spin h-10 w-10" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                </svg>
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 h-max content-start">
               {discoverSongs.length > 0 ? (
                 discoverSongs.map((song) => {
                   const isInPlaylist = playlist.some((s) => s.id === song.id);
@@ -234,8 +235,9 @@ export default function Home() {
                   No se encontraron canciones para &quot;{searchTerm}&quot;
                 </div>
               )}
-            </div>
-          )}
+              </div>
+            )}
+          </div>
 
           {requestsPaused && (
             <div className="absolute inset-0 z-20 bg-black/40 backdrop-blur-sm rounded-3xl flex items-center justify-center">
@@ -251,18 +253,25 @@ export default function Home() {
         </div>
 
         {/* Right Column: Playlist */}
-        <div className="w-full md:w-[380px] shrink-0">
-          <div className="sticky top-6 bg-white/5 border border-white/10 rounded-3xl p-6 backdrop-blur-xl shadow-2xl h-[calc(100vh-48px)] flex flex-col">
-            <header className="flex items-center justify-between mb-6 pb-6 border-b border-white/10">
-              <h2 className="text-2xl font-bold flex items-center gap-2">
-                <svg className="w-6 h-6 text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" />
-                </svg>
-                En Vivo (Cola)
-              </h2>
-              <span className="bg-purple-500/20 text-purple-300 text-xs font-bold px-3 py-1 rounded-full">
-                {playlist.length} canción{playlist.length !== 1 && 'es'}
-              </span>
+        <div className="w-full md:w-[350px] lg:w-[400px] xl:w-[480px] shrink-0 h-full flex flex-col md:pb-0">
+          <div className="bg-white/5 border border-white/10 rounded-[2rem] p-4 lg:p-6 backdrop-blur-xl shadow-2xl h-full flex flex-col overflow-hidden">
+            <header className="flex flex-col gap-3 mb-4 pb-4 border-b border-white/10 shrink-0">
+              <div className="flex items-start justify-between">
+                <div className="flex flex-col gap-1">
+                  <h2 className="text-2xl lg:text-3xl xl:text-4xl font-black flex items-center gap-2 bg-clip-text text-transparent bg-gradient-to-r from-orange-400 via-red-500 to-purple-500 animate-pulse leading-none">
+                    🔥 La Playlist 🔥
+                  </h2>
+                  <p className="text-zinc-400 font-medium italic mt-1 text-xs lg:text-sm">¡Vota tus temas para que suenen!</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="bg-gradient-to-r from-orange-500/20 to-purple-500/20 text-orange-300 text-xs xl:text-sm font-bold px-3 py-1.5 rounded-full border border-orange-500/30">
+                  {playlist.length} en cola
+                </span>
+                <span className="bg-white/10 text-white text-xs xl:text-sm font-bold px-3 py-1.5 rounded-full border border-white/20 animate-pulse">
+                  🎵 EN VIVO
+                </span>
+              </div>
             </header>
 
             <div className="flex-1 overflow-y-auto pr-2 flex flex-col gap-3">
@@ -285,43 +294,43 @@ export default function Home() {
                   <div
                     key={song.id}
                     onClick={() => addToPlaylist(song)}
-                    className={`group border rounded-xl p-3 flex items-center gap-4 transition-all duration-300 cursor-pointer active:scale-[0.98] ${
-                        song.status === 'playing' ? 'bg-purple-900/40 border-purple-500/50 shadow-[0_0_15px_rgba(168,85,247,0.2)]' : 
+                    className={`group border rounded-2xl p-4 flex items-center gap-4 transition-all duration-300 cursor-pointer active:scale-[0.98] hover:shadow-2xl ${
+                        song.status === 'playing' ? 'bg-purple-900/40 border-purple-500/50 shadow-[0_0_20px_rgba(168,85,247,0.3)] scale-[1.02] -translate-y-1' : 
                         song.status === 'played' ? 'bg-white/5 border-white/5 opacity-50 grayscale hover:opacity-100 hover:grayscale-0' : 
-                        'bg-white/5 hover:bg-white/10 border-white/5'
+                        'bg-white/5 hover:bg-white/10 border-white/10 hover:-translate-y-1'
                     }`}
                     title="Click para votar por esta canción"
                   >
-                    <div className="relative w-12 h-12 rounded-lg overflow-hidden shrink-0 shadow-md">
+                    <div className="relative w-16 h-16 xl:w-20 xl:h-20 rounded-xl overflow-hidden shrink-0 shadow-lg group-hover:shadow-purple-500/20 transition-all">
                       <Image
                         src={song.coverUrl}
                         alt={song.album}
                         fill
-                        className="object-cover"
+                        className="object-cover group-hover:scale-110 transition-transform duration-500"
                         unoptimized
                       />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <h4 className="font-medium text-sm text-zinc-100 truncate flex items-center gap-2">
+                      <h4 className="font-bold text-base xl:text-lg text-zinc-100 truncate flex items-center gap-2">
                         {song.title}
                         {song.status === 'playing' && (
-                            <span className="text-[10px] font-bold bg-purple-500 text-white px-1.5 py-0.5 rounded flex items-center gap-1 shrink-0">
-                                <span className="w-1.5 h-1.5 bg-white rounded-full animate-pulse" /> SONANDO
+                            <span className="text-[10px] xl:text-xs font-black bg-gradient-to-r from-purple-500 to-pink-500 text-white px-2 py-1 rounded-md flex items-center gap-1.5 shrink-0 shadow-lg shadow-purple-500/50">
+                                <span className="w-2 h-2 bg-white rounded-full animate-pulse" /> SONANDO
                             </span>
                         )}
                         {song.status === 'played' && (
-                            <span className="text-[10px] font-bold bg-zinc-800 text-zinc-400 px-1.5 py-0.5 rounded border border-zinc-700 shrink-0">
+                            <span className="text-[10px] xl:text-xs font-bold bg-zinc-800 text-zinc-400 px-2 py-1 rounded-md border border-zinc-700 shrink-0">
                                 TOCADA
                             </span>
                         )}
                       </h4>
-                      <div className="flex items-center gap-2 text-xs text-zinc-400">
+                      <div className="flex items-center gap-2 text-sm xl:text-base text-zinc-400 mt-1">
                         <span className="truncate">{song.artist}</span>
                       </div>
                     </div>
                     {song.requests_count && song.requests_count > 1 ? (
-                      <div className="bg-purple-500/20 text-purple-300 px-2 py-1 rounded text-xs font-bold shrink-0 border border-purple-500/30">
-                        {song.requests_count} votos
+                      <div className="bg-gradient-to-r from-orange-500 to-red-500 text-white px-3 py-1.5 rounded-lg text-sm xl:text-base font-black shrink-0 shadow-lg shadow-red-500/20 rotate-3 group-hover:rotate-0 transition-transform">
+                        🔥 {song.requests_count}
                       </div>
                     ) : null}
                   </div>
@@ -332,23 +341,19 @@ export default function Home() {
 
 
             {/* Sponsor Banner / QR Section */}
-            <div className="mt-12 pt-8 border-t border-white/10">
-              <p className="text-[11px] text-zinc-400 uppercase tracking-widest font-bold mb-6 text-center">Sígueme en Instagram</p>
-              <div className="bg-white/5 border border-white/10 rounded-[2.5rem] p-10 flex flex-col items-center justify-center gap-6 hover:bg-white/10 transition-all duration-500 backdrop-blur-md group cursor-pointer shadow-2xl">
-                <div className="w-full relative aspect-square max-w-[280px] bg-white rounded-3xl flex items-center justify-center overflow-hidden shadow-[0_0_50px_rgba(255,255,255,0.15)] group-hover:shadow-[0_0_60px_rgba(255,255,255,0.25)] transition-all duration-500 ring-8 ring-white/5">
+            <div className="mt-4 pt-4 border-t border-white/10 shrink-0">
+              <div className="bg-white/5 border border-white/10 rounded-2xl lg:rounded-3xl p-3 lg:p-4 flex flex-col items-center justify-center gap-2 lg:gap-3 hover:bg-white/10 transition-all duration-500 backdrop-blur-md group cursor-pointer shadow-lg text-center">
+                <p className="text-[10px] text-zinc-400 uppercase tracking-widest font-bold">Sígueme en Instagram</p>
+                <div className="h-24 w-24 lg:w-28 lg:h-28 xl:w-32 xl:h-32 relative bg-white rounded-xl lg:rounded-2xl shadow-[0_0_20px_rgba(255,255,255,0.1)] group-hover:shadow-[0_0_30px_rgba(255,255,255,0.2)] transition-all shrink-0">
                   <Image
                     src="/instagram-qr.png"
                     alt="Instagram QR Code"
                     fill
-                    className="object-contain p-6 group-hover:scale-105 transition-transform duration-700"
+                    className="object-contain p-2 lg:p-3 group-hover:scale-105 transition-transform duration-500"
                     unoptimized
                   />
                 </div>
-                <div className="text-center">
-                  <h4 className="font-bold text-xl text-zinc-100 group-hover:text-purple-300 transition-colors tracking-tight">Escanea para Seguir</h4>
-                  <p className="text-sm text-zinc-400 mt-2 font-medium">@marcos_dj.uy</p>
-                  <p className="text-[10px] text-zinc-500 mt-4 italic">Tip: Si no lee, baja un poco el brillo de tu celular.</p>
-                </div>
+                <h4 className="font-bold text-base lg:text-xl xl:text-2xl text-zinc-100 group-hover:text-purple-300 transition-colors tracking-tight">@marcos_dj.uy</h4>
               </div>
             </div>
           </div>
