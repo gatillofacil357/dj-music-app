@@ -13,8 +13,8 @@ export default function Home() {
   const [notification, setNotification] = useState<string | null>(null);
   const [requestsPaused, setRequestsPaused] = useState(false);
 
-  const isVotingRef = useRef<boolean>(false);
-  const votingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  // We use a ref to track the exact time of the last vote
+  const lastVoteTimeRef = useRef<number>(0);
 
   const showNotification = (msg: string) => {
     setNotification(msg);
@@ -32,7 +32,10 @@ export default function Home() {
 
         if (resPlaylist && resPlaylist.ok) {
           const data = await resPlaylist.json();
-          if (!isVotingRef.current) {
+          // Only update from server if we haven't voted in the last 4 seconds.
+          // This prevents polling from overwriting our optimistic state before the server 
+          // has had a chance to fully process and return the new data in the next cycle.
+          if (Date.now() - lastVoteTimeRef.current > 4000) {
             setPlaylist(data.filter((s: Song) => s.id !== 'SYSTEM_SETTINGS'));
           }
         }
@@ -56,10 +59,8 @@ export default function Home() {
       return;
     }
 
-    isVotingRef.current = true;
-    if (votingTimeoutRef.current) {
-      clearTimeout(votingTimeoutRef.current);
-    }
+    // Mark that we just voted so polling ignores server responses for a few seconds
+    lastVoteTimeRef.current = Date.now();
 
     // Optimistic UI update
     const isAlreadyIn = playlist.find((s) => s.id === song.id);
@@ -79,10 +80,6 @@ export default function Home() {
       });
     } catch (e) {
       console.error("Failed to sync add song", e);
-    } finally {
-      votingTimeoutRef.current = setTimeout(() => {
-        isVotingRef.current = false;
-      }, 1500);
     }
   };
 
