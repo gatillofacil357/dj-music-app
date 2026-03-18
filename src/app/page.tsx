@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Image from "next/image";
 import { songs, Song } from "../data/songs";
+import { motion, AnimatePresence } from "framer-motion";
 
 export default function Home() {
   const [playlist, setPlaylist] = useState<Song[]>([]);
@@ -11,6 +12,9 @@ export default function Home() {
   const [loading, setLoading] = useState(false);
   const [notification, setNotification] = useState<string | null>(null);
   const [requestsPaused, setRequestsPaused] = useState(false);
+
+  const isVotingRef = useRef<boolean>(false);
+  const votingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const showNotification = (msg: string) => {
     setNotification(msg);
@@ -28,7 +32,9 @@ export default function Home() {
 
         if (resPlaylist && resPlaylist.ok) {
           const data = await resPlaylist.json();
-          setPlaylist(data.filter((s: Song) => s.id !== 'SYSTEM_SETTINGS'));
+          if (!isVotingRef.current) {
+            setPlaylist(data.filter((s: Song) => s.id !== 'SYSTEM_SETTINGS'));
+          }
         }
         if (resSettings && resSettings.ok) {
           const settings = await resSettings.json();
@@ -50,13 +56,18 @@ export default function Home() {
       return;
     }
 
+    isVotingRef.current = true;
+    if (votingTimeoutRef.current) {
+      clearTimeout(votingTimeoutRef.current);
+    }
+
     // Optimistic UI update
     const isAlreadyIn = playlist.find((s) => s.id === song.id);
     if (!isAlreadyIn) {
-      setPlaylist([...playlist, { ...song, requests_count: 1, status: 'queued' }]);
+      setPlaylist(prev => [...prev, { ...song, requests_count: 1, status: 'queued' }]);
       showNotification(`✔️ Añadida a la cola: ${song.title}`);
     } else {
-      setPlaylist(playlist.map(s => s.id === song.id ? { ...s, requests_count: (s.requests_count || 1) + 1, status: s.status === 'played' ? 'queued' : s.status } : s));
+      setPlaylist(prev => prev.map(s => s.id === song.id ? { ...s, requests_count: (s.requests_count || 1) + 1, status: s.status === 'played' ? 'queued' : s.status } : s));
       showNotification(`🔥 ¡Votaste por: ${song.title}!`);
     }
 
@@ -68,6 +79,10 @@ export default function Home() {
       });
     } catch (e) {
       console.error("Failed to sync add song", e);
+    } finally {
+      votingTimeoutRef.current = setTimeout(() => {
+        isVotingRef.current = false;
+      }, 1500);
     }
   };
 
@@ -275,14 +290,22 @@ export default function Home() {
             </header>
 
             <div className="flex-1 overflow-y-auto pr-2 flex flex-col gap-3">
+              <AnimatePresence mode="popLayout">
               {playlist.length === 0 ? (
-                <div className="flex flex-col items-center justify-center h-full text-zinc-500 gap-4 opacity-50">
+                <motion.div 
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.95 }}
+                  className="flex flex-col items-center justify-center h-full text-zinc-500 gap-4 opacity-50"
+                  key="empty-state"
+                  transition={{ duration: 0.2 }}
+                >
                   <svg className="w-16 h-16 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
                   </svg>
                   <p className="text-center font-medium">La cola está vacía.</p>
                   <p className="text-sm text-center">¡Agrega unas cuantas pistas de la biblioteca!</p>
-                </div>
+                </motion.div>
               ) : (
                 [...playlist].sort((a, b) => {
                     const order = { 'playing': 0, 'queued': 1, 'played': 2 };
@@ -291,13 +314,23 @@ export default function Home() {
                     if (order[aStatus] !== order[bStatus]) return order[aStatus] - order[bStatus];
                     return (b.requests_count || 1) - (a.requests_count || 1);
                 }).map((song, index) => (
-                  <div
+                  <motion.div
+                    initial={{ opacity: 0, x: 20 }}
+                    animate={{ 
+                        opacity: 1, 
+                        x: 0,
+                        ...(song.status === 'playing' ? { y: -4, scale: 1.02 } : { y: 0, scale: 1 })
+                    }}
+                    exit={{ opacity: 0, x: -20, scale: 0.95 }}
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    transition={{ type: "tween", duration: 0.25, ease: "easeOut" }}
                     key={song.id}
                     onClick={() => addToPlaylist(song)}
-                    className={`group border rounded-2xl p-4 flex items-center gap-4 transition-all duration-300 cursor-pointer active:scale-[0.98] hover:shadow-2xl ${
-                        song.status === 'playing' ? 'bg-purple-900/40 border-purple-500/50 shadow-[0_0_20px_rgba(168,85,247,0.3)] scale-[1.02] -translate-y-1' : 
+                    className={`group border rounded-2xl p-4 flex items-center gap-4 transition-colors duration-300 cursor-pointer hover:shadow-2xl ${
+                        song.status === 'playing' ? 'bg-purple-900/40 border-purple-500/50 shadow-[0_0_20px_rgba(168,85,247,0.3)]' : 
                         song.status === 'played' ? 'bg-white/5 border-white/5 opacity-50 grayscale hover:opacity-100 hover:grayscale-0' : 
-                        'bg-white/5 hover:bg-white/10 border-white/10 hover:-translate-y-1'
+                        'bg-white/5 hover:bg-white/10 border-white/10'
                     }`}
                     title="Click para votar por esta canción"
                   >
@@ -328,14 +361,24 @@ export default function Home() {
                         <span className="truncate">{song.artist}</span>
                       </div>
                     </div>
+                    <AnimatePresence mode="popLayout">
                     {song.requests_count && song.requests_count > 1 ? (
-                      <div className="bg-gradient-to-r from-orange-500 to-red-500 text-white px-3 py-1.5 rounded-lg text-sm xl:text-base font-black shrink-0 shadow-lg shadow-red-500/20 rotate-3 group-hover:rotate-0 transition-transform">
+                      <motion.div 
+                        initial={{ opacity: 0, scale: 0.8 }}
+                        animate={{ opacity: 1, scale: 1, rotate: 3 }}
+                        exit={{ opacity: 0, scale: 0.8 }}
+                        transition={{ duration: 0.2 }}
+                        key={`badge-${song.requests_count}`}
+                        className="bg-gradient-to-r from-orange-500 to-red-500 text-white px-3 py-1.5 rounded-lg text-sm xl:text-base font-black shrink-0 shadow-lg shadow-red-500/20"
+                      >
                         🔥 {song.requests_count}
-                      </div>
+                      </motion.div>
                     ) : null}
-                  </div>
+                    </AnimatePresence>
+                  </motion.div>
                 ))
               )}
+              </AnimatePresence>
             </div>
 
 
