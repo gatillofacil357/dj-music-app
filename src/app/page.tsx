@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import Image from "next/image";
 import { songs, Song } from "../data/songs";
 import { motion, AnimatePresence } from "framer-motion";
+import { supabase } from "../utils/supabase";
 
 export default function Home() {
   const [playlist, setPlaylist] = useState<Song[]>([]);
@@ -13,17 +14,14 @@ export default function Home() {
   const [notification, setNotification] = useState<string | null>(null);
   const [requestsPaused, setRequestsPaused] = useState(false);
 
-  // We use a ref to track the exact time of the last vote
-  const lastVoteTimeRef = useRef<number>(0);
-
   const showNotification = (msg: string) => {
     setNotification(msg);
     setTimeout(() => setNotification(null), 3000);
   };
 
-  // Fetch playlist continuously for multi-device sync
+  // Fetch playlist initially and subscribe to realtime changes
   useEffect(() => {
-    const fetchPlaylist = async () => {
+    const fetchInitialData = async () => {
       try {
         const [resPlaylist, resSettings] = await Promise.all([
           fetch("/api/playlist").catch(() => null),
@@ -32,25 +30,56 @@ export default function Home() {
 
         if (resPlaylist && resPlaylist.ok) {
           const data = await resPlaylist.json();
-          // Only update from server if we haven't voted in the last 4 seconds.
-          // This prevents polling from overwriting our optimistic state before the server 
-          // has had a chance to fully process and return the new data in the next cycle.
-          if (Date.now() - lastVoteTimeRef.current > 4000) {
-            setPlaylist(data.filter((s: Song) => s.id !== 'SYSTEM_SETTINGS'));
-          }
+          setPlaylist(data.filter((s: Song) => s.id !== 'SYSTEM_SETTINGS'));
         }
         if (resSettings && resSettings.ok) {
           const settings = await resSettings.json();
           setRequestsPaused(settings.requestsPaused);
         }
       } catch (e) {
-        console.error("Failed to fetch playlist", e);
+        console.error("Failed to fetch initial playlist", e);
       }
     };
 
-    fetchPlaylist();
-    const interval = setInterval(fetchPlaylist, 3000); // Sync every 3 seconds
-    return () => clearInterval(interval);
+    fetchInitialData();
+
+    // Subscribe to real-time changes
+    const subscription = supabase
+        .channel('public:playlist')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'playlist' }, (payload) => {
+            const newOrUpdatedSong = payload.new as Song;
+            const oldSongId = (payload.old as { id: string })?.id;
+
+            if (payload.eventType === 'INSERT') {
+                if (newOrUpdatedSong.id !== 'SYSTEM_SETTINGS') {
+                    setPlaylist(prev => {
+                        const exists = prev.find(s => s.id === newOrUpdatedSong.id);
+                        if (exists) return prev; // Avoid duplicates from optimistic UI
+                        return [...prev, newOrUpdatedSong];
+                    });
+                } else {
+                    // It's a settings update
+                    if (newOrUpdatedSong.requests_count !== undefined) {
+                         setRequestsPaused(newOrUpdatedSong.requests_count === 1);
+                    }
+                }
+            } else if (payload.eventType === 'UPDATE') {
+                if (newOrUpdatedSong.id === 'SYSTEM_SETTINGS') {
+                    setRequestsPaused(newOrUpdatedSong.requests_count === 1);
+                } else {
+                    setPlaylist(prev => prev.map(s => s.id === newOrUpdatedSong.id ? newOrUpdatedSong : s));
+                }
+            } else if (payload.eventType === 'DELETE') {
+                if (oldSongId !== 'SYSTEM_SETTINGS') {
+                    setPlaylist(prev => prev.filter(s => s.id !== oldSongId));
+                }
+            }
+        })
+        .subscribe();
+
+    return () => {
+        supabase.removeChannel(subscription);
+    };
   }, []);
 
   const addToPlaylist = async (song: Song) => {
@@ -58,9 +87,6 @@ export default function Home() {
       showNotification("❌ Pedidos pausados temporalmente por el DJ");
       return;
     }
-
-    // Mark that we just voted so polling ignores server responses for a few seconds
-    lastVoteTimeRef.current = Date.now();
 
     // Optimistic UI update
     const isAlreadyIn = playlist.find((s) => s.id === song.id);

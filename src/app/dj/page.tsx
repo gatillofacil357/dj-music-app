@@ -3,14 +3,15 @@
 import { useState, useEffect } from "react";
 import Image from "next/image";
 import { Song } from "../../data/songs";
+import { supabase } from "../../utils/supabase";
 
 export default function DjDashboard() {
     const [playlist, setPlaylist] = useState<Song[]>([]);
     const [requestsPaused, setRequestsPaused] = useState(false);
 
-    // Fetch playlist continuously for multi-device sync
+    // Fetch playlist initially and subscribe to realtime changes
     useEffect(() => {
-        const fetchPlaylist = async () => {
+        const fetchInitialData = async () => {
             try {
                 const [resPlaylist, resSettings] = await Promise.all([
                     fetch("/api/playlist").catch(() => null),
@@ -26,13 +27,49 @@ export default function DjDashboard() {
                     setRequestsPaused(settings.requestsPaused);
                 }
             } catch (e) {
-                console.error("Failed to fetch playlist", e);
+                console.error("Failed to fetch initial playlist", e);
             }
         };
 
-        fetchPlaylist();
-        const interval = setInterval(fetchPlaylist, 3000); // Sync every 3 seconds
-        return () => clearInterval(interval);
+        fetchInitialData();
+
+        // Subscribe to real-time changes
+        const subscription = supabase
+            .channel('public:playlist')
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'playlist' }, (payload) => {
+                const newOrUpdatedSong = payload.new as Song;
+                const oldSongId = (payload.old as { id: string })?.id;
+
+                if (payload.eventType === 'INSERT') {
+                    if (newOrUpdatedSong.id !== 'SYSTEM_SETTINGS') {
+                        setPlaylist(prev => {
+                            const exists = prev.find(s => s.id === newOrUpdatedSong.id);
+                            if (exists) return prev; // Avoid duplicates from optimistic UI
+                            return [...prev, newOrUpdatedSong];
+                        });
+                    } else {
+                        // It's a settings update
+                        if (newOrUpdatedSong.requests_count !== undefined) {
+                             setRequestsPaused(newOrUpdatedSong.requests_count === 1);
+                        }
+                    }
+                } else if (payload.eventType === 'UPDATE') {
+                    if (newOrUpdatedSong.id === 'SYSTEM_SETTINGS') {
+                        setRequestsPaused(newOrUpdatedSong.requests_count === 1);
+                    } else {
+                        setPlaylist(prev => prev.map(s => s.id === newOrUpdatedSong.id ? newOrUpdatedSong : s));
+                    }
+                } else if (payload.eventType === 'DELETE') {
+                    if (oldSongId !== 'SYSTEM_SETTINGS') {
+                        setPlaylist(prev => prev.filter(s => s.id !== oldSongId));
+                    }
+                }
+            })
+            .subscribe();
+
+        return () => {
+            supabase.removeChannel(subscription);
+        };
     }, []);
 
     const updateSongStatus = async (songId: string, status: 'queued' | 'playing' | 'played') => {
