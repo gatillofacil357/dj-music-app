@@ -340,22 +340,25 @@ export default function Home() {
                         unoptimized
                       />
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <h4 className="font-bold text-base xl:text-lg text-zinc-100 truncate flex items-center gap-2">
-                        {song.title}
-                        {song.status === 'playing' && (
-                            <span className="text-[10px] xl:text-xs font-black bg-gradient-to-r from-purple-500 to-pink-500 text-white px-2 py-1 rounded-md flex items-center gap-1.5 shrink-0 shadow-lg shadow-purple-500/50">
-                                <span className="w-2 h-2 bg-white rounded-full animate-pulse" /> SONANDO
-                            </span>
-                        )}
-                        {song.status === 'played' && (
-                            <span className="text-[10px] xl:text-xs font-bold bg-zinc-800 text-zinc-400 px-2 py-1 rounded-md border border-zinc-700 shrink-0">
-                                TOCADA
-                            </span>
-                        )}
-                      </h4>
-                      <div className="flex items-center gap-2 text-sm xl:text-base text-zinc-400 mt-1">
-                        <span className="truncate">{song.artist}</span>
+                    <div className="flex-1 min-w-0 flex flex-col justify-center">
+                      <div className="flex flex-col gap-1">
+                        <h4 className="font-bold text-base xl:text-lg text-zinc-100 truncate">
+                          {song.title}
+                        </h4>
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="text-sm xl:text-base text-zinc-400 truncate max-w-[120px] md:max-w-[200px]">{song.artist}</span>
+                          
+                          {song.status === 'playing' && (
+                              <span className="text-[10px] xl:text-xs font-black bg-gradient-to-r from-purple-500 to-pink-500 text-white px-2 py-1 rounded-md flex items-center gap-1.5 shrink-0 shadow-lg shadow-purple-500/50 w-max whitespace-nowrap">
+                                  <span className="w-2 h-2 bg-white rounded-full animate-pulse shrink-0" /> SONANDO
+                              </span>
+                          )}
+                          {song.status === 'played' && (
+                              <span className="text-[10px] xl:text-xs font-bold bg-zinc-800 text-zinc-400 px-2 py-1 rounded-md border border-zinc-700 shrink-0 w-max whitespace-nowrap">
+                                  TOCADA
+                              </span>
+                          )}
+                        </div>
                       </div>
                     </div>
                     <AnimatePresence mode="popLayout">
